@@ -187,10 +187,10 @@ function neo4j2d3(
 	.then(function(g){return mapIds(g);});
 }
 
-/*const exports = {
-    driver, neo4j2d3, mapIds, makeGraph, handleNode, handleLink,
-    handleRecordField, handleProperties, handleInt, basicTypeCheck
-};*/
+exports.get = neo4j2d3;
+// exports.driver = driver;
+//exports.basicTypeCheck = basicTypeCheck;
+//exports = { driver, neo4j2d3, mapIds, makeGraph, handleNode, handleLink, handleRecordField, handleProperties, handleInt, basicTypeCheck};
 
 /**
  * Gets course ids
@@ -210,8 +210,8 @@ var handlers = {
     idGetter:courseIdGetter
 };
 
-var temp = neo4j2d3(
+/* var temp = neo4j2d3(
     'MATCH (c:Course)-[r]-(d:Course) RETURN c,r,d LIMIT 2',
     {},
     handlers
-).then(console.log);
+).then(console.log); */
