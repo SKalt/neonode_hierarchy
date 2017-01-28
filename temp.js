@@ -2,17 +2,11 @@ const inquirer = require('inquirer');
 const express = require('express');
 const neo4j = require('neo4j-driver').v1;
 const neo4j2d3 = require('./neo-export-d3.js');
-const pug = require('pug');
-let driver = '';
+let driver = ''; // do I need this?
+
 const app = express();
 const api = express();
-
-/*app.use('/js', express.static('public/js'));
-app.use('/css', express.static('public/css'));
-app.use('/img', express.static('public/img'));
- */
 app.use(express.static('public'));
-
 app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
 });
@@ -56,13 +50,78 @@ api.use(function(req, res, next) {
   next();
 });
 
-api.get('/course',
-	function(req, res){
-	    for (var course of req.query.courses){
-		// course is a str course code
-		console.log(course);
+api.get('/search',
+	// this endpoint always returns course id/title pairs.
+	function(req,res){
+	    function wordSearch(str){
+		return '(?i)(?s).*' + str.replace(/\s+/g, '.*') + '.*';
 	    }
+	    
+	    // create a cypher query based on req.query
+	    let query = "MATCH (c:Course) ";
+	    let queryParams = {};
+	    // there must always be a set of years selected
+	    query += `WHERE SIZE(FILTER(y in c.years WHERE y in {years}) > 0`;
+	    queryParams.years = req.query.years;
+	    //first search course title, desc by case-insensitive keywords
+	    if (req.query.hasOwnProperty('searchStr')){
+		// req.query.searchStr must be a single string
+		if (typeof(req.query.searchStr) != "string"){
+		    throw `searchStr is an array:${req.query.searchStr}`;
+		} else {
+		    let searchStr = wordSearch(req.query.searchStr);
+		    query += ` AND (c.tile =~ {searchStr}
+	  	              OR c.desc =~ {searchStr}) `;
+		    queryParams.searchStr = searchStr;
+		}
+	    }
+	    // limit to a set of depts
+	    if (req.query.hasOwnProperty('depts')){
+		query += `WITH c MATCH (c)-[r:In_Dept]-(d:Dept)
+                          WHERE d.code in {depts}`;
+		queryParams.depts = req.query.depts;
+	    }
+	    if (req.query.hasOwnProperty('programs')){
+		// limit to a set of concentrations/programs
+		query += ` WITH c MATCH (c)-[r:In_Dept]-(d)
+		 WHERE d.code in {depts} `;
+		"RETURN c.code LIMIT 100";
+	    
+	    driverReady.then(
+		function(_driver){
+		    let session = _driver.session();
+		    let query = "";
+		    const params = res.query;
+		    if (params.hasOwnProperty('levels'){
+			
+		    }
+		    session.run(query, );
+		};
+	    // switch between queries based on parameters
+	    let query = "";
+	    if (req.query.hasOwnAttribute('levels'){
+		
+	    }
+		
 	});
+api.get('/courses',
+	function(req, res){
+	    driverReady.then(
+		function(){
+		    let handlers = {
+			pathHandler:function(){return undefined;},
+			segmentHandler:function(){return undefined;},
+			idGetter:courseIdGetter
+		    };
+		    let query = "MATCH (c:Course)-[r:Prereq_To*]-(d:Course)\n";
+		    query +=    "WHERE c.code in {codes}\n";
+		    query +=    "RETURN c,r,d LIMIT 100";
+		    return neo4j2d3.get(query, {courses:req.courses}, handlers);
+		}
+	    );
+	}
+       );
+
 	
 
 api.get('/test',
