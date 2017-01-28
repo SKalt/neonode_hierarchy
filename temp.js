@@ -50,60 +50,86 @@ api.use(function(req, res, next) {
   next();
 });
 
-api.get('/search',
+api.get('/search_courses',
 	// this endpoint always returns course id/title pairs.
 	function(req,res){
+
+	    console.log(req.query);
+	    
 	    function wordSearch(str){
 		return '(?i)(?s).*' + str.replace(/\s+/g, '.*') + '.*';
 	    }
 	    
 	    // create a cypher query based on req.query
 	    let query = "MATCH (c:Course) ";
-	    let queryParams = {};
 	    // there must always be a set of years selected
-	    query += `WHERE SIZE(FILTER(y in c.years WHERE y in {years}) > 0`;
-	    queryParams.years = req.query.years;
+	    query += ` WHERE SIZE(FILTER(y IN c.years WHERE y IN {years})) > 0`;
+	    req.query.years.forEach(function(year, index, yearsArray){
+		yearsArray[index] = Number(year);
+	    });
+	    
 	    //first search course title, desc by case-insensitive keywords
 	    if (req.query.hasOwnProperty('searchStr')){
 		// req.query.searchStr must be a single string
 		if (typeof(req.query.searchStr) != "string"){
 		    throw `searchStr is an array:${req.query.searchStr}`;
 		} else {
-		    let searchStr = wordSearch(req.query.searchStr);
+		    req.query.searchStr = wordSearch(req.query.searchStr);
 		    query += ` AND (c.tile =~ {searchStr}
-	  	              OR c.desc =~ {searchStr}) `;
-		    queryParams.searchStr = searchStr;
+	  	               OR c.desc =~ {searchStr}) `;
 		}
 	    }
+	    
 	    // limit to a set of depts
 	    if (req.query.hasOwnProperty('depts')){
-		query += `WITH c MATCH (c)-[r:In_Dept]-(d:Dept)
-                          WHERE d.code in {depts}`;
-		queryParams.depts = req.query.depts;
+		query += ` WITH c MATCH (c)-[r:In_Dept]-(d:Dept)
+                           WHERE d.code IN {depts}`;
 	    }
+	    
+	    // limit to a set of concentrations/programs    
 	    if (req.query.hasOwnProperty('programs')){
-		// limit to a set of concentrations/programs
-		query += ` WITH c MATCH (c)-[r:In_Dept]-(d)
-		 WHERE d.code in {depts} `;
-		"RETURN c.code LIMIT 100";
+		query += ` WITH c MATCH (c)-[r:In_Program]-(d)
+		           WHERE d.name IN {programs}`;
+	    }
+	    // limit to a set of professors teaching in selected years
+	    if (req.query.hasOwnProperty('profs')){
+		query += ` WITH c MATCH (c)-[t]-(p:Prof)
+		WHERE SIZE(FILTER(x IN t.years WHERE x IN {years})) > 0
+		AND p.name IN {profs}`; // p.names must be correctly spelled
+	    }
+	    query += ` RETURN c.code, c.title LIMIT 100`;
 	    
 	    driverReady.then(
 		function(_driver){
 		    let session = _driver.session();
-		    let query = "";
-		    const params = res.query;
-		    if (params.hasOwnProperty('levels'){
-			
-		    }
-		    session.run(query, );
-		};
-	    // switch between queries based on parameters
-	    let query = "";
-	    if (req.query.hasOwnAttribute('levels'){
-		
-	    }
-		
-	});
+		    console.log(query);
+		    console.log(req.query);
+		    return session.run(query, req.query)
+			.then(
+			    function(response){
+				let results = [];
+				response.records.forEach(
+				    function(record){
+					results.push({
+					    code:record.get('c.code'),
+					    title:record.get('c.title')
+					});
+				    }
+				);
+				console.log(results);
+				return results;
+			    }
+			).catch(console.log)
+			.then(
+			    function(results){
+				res.send(results);
+			    }
+			).catch(console.log);
+		}
+	    ).catch(console.log);
+	}
+       );
+
 api.get('/courses',
 	function(req, res){
 	    driverReady.then(
@@ -113,10 +139,10 @@ api.get('/courses',
 			segmentHandler:function(){return undefined;},
 			idGetter:courseIdGetter
 		    };
-		    let query = "MATCH (c:Course)-[r:Prereq_To*]-(d:Course)\n";
-		    query +=    "WHERE c.code in {codes}\n";
-		    query +=    "RETURN c,r,d LIMIT 100";
-		    return neo4j2d3.get(query, {courses:req.courses}, handlers);
+		    let query = `MATCH (c:Course)-[r:Prereq_To*]-(d:Course)
+		                 WHERE c.code in {codes}
+		                 RETURN c,r,d LIMIT 100`;
+		    return neo4j2d3.get(query, {codes:req.courses}, handlers);
 		}
 	    );
 	}
