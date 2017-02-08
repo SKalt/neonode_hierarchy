@@ -3,7 +3,7 @@ const express = require('express');
 const neo4j = require('neo4j-driver').v1;
 const neo4j2d3 = require('./neo-export-d3.js');
 let driver = ''; // do I need this?
-
+const fs = require('fs');
 const app = express();
 const api = express();
 app.use(express.static('public'));
@@ -11,38 +11,85 @@ app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
 });
 
-let driverReady = inquirer.prompt(
-    [
-	{
-	    type: 'input',
-	    name: 'username',
-	    message: 'Username:'
-	},
-	{
-	    type: 'password',
-	    message: 'Password:',
-	    name: 'password'
-	}
-    ]
-).then(
-    function (answers) {
-	console.log(driver);
-	driver = neo4j.driver(
-	    'bolt://localhost:7687',
-	    neo4j.auth.basic(
-		answers.username,
-		answers.password
-	    )
-	);
-	return driver;
-    }
-);
+// let driverReady = inquirer.prompt(
+//     [
+// 	{
+// 	    type: 'input',
+// 	    name: 'username',
+// 	    message: 'Username:'
+// 	},
+// 	{
+// 	    type: 'password',
+// 	    message: 'Password:',
+// 	    name: 'password'
+// 	}
+//     ]
+// ).then(
+//     function (answers) {
+// 	console.log(driver);
+// 	driver = neo4j.driver(
+// 	    'bolt://localhost:7687',
+// 	    neo4j.auth.basic(
+// 		answers.username,
+// 		answers.password
+// 	    )
+// 	);
+// 	return driver;
+//     }
+// );
+function _driver(){
+    return new Promise(
+	function(res, rej){
+	    res(
+		neo4j.driver(
+		    'bolt://localhost:7687',
+		    neo4j.auth.basic(
+			'neo4j',
+			'alpha123'
+		    )
+		)
+	    );
+	});
+}
+    
+let driverReady = _driver();
 
 function courseIdGetter(n){
     const id = n.properties.code;
     delete n.properties.code;
     return id;
 };
+
+// cache professors, concentrations/programs, depts
+function cacheArray(query, dest){
+    driverReady.then(
+	function(_driver){
+	    let session = _driver.session();
+	    session.run(query)
+		.then(function(result){
+		    let records = [];
+		    result.records.forEach(
+			function(record){
+			    records.push(record._fields[0]);
+			});
+		    return records;
+		}).catch(console.log)
+		.then(
+		    function(records){
+			fs.writeFile(
+			    dest,
+			    JSON.stringify(records),
+			    'utf8',
+			    (err)=>{if (err) throw err;}
+			);
+		    }
+		);
+	});
+}
+cacheArray(`MATCH (p:Prof) RETURN p.name`, './public/profs.json');
+cacheArray(`MATCH (p:Program) RETURN p.name`, './public/programs.json');
+cacheArray(`MATCH (c:Concentration) RETURN c.name`, './public/concentrations.json');
+cacheArray(`MATCH (d:Dept) RETURN d.name`, './public/depts.json');
 
 api.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -134,21 +181,59 @@ api.get('/courses',
 	function(req, res){
 	    driverReady.then(
 		function(){
+		    console.log('req @ 3001/courses', req.query);
 		    let handlers = {
 			pathHandler:function(){return undefined;},
 			segmentHandler:function(){return undefined;},
 			idGetter:courseIdGetter
 		    };
-		    let query = `MATCH (c:Course)-[r:Prereq_To*]-(d:Course)
+		    let query = `MATCH (c:Course)<-[r:Prereq_To*]-(d:Course)
 		                 WHERE c.code in {codes}
-		                 RETURN c,r,d LIMIT 100`;
-		    return neo4j2d3.get(query, {codes:req.courses}, handlers);
+		                 UNWIND r as p
+		                 RETURN distinct c, 
+		                 startNode(p), endNode(p), p,
+		                 d LIMIT 100`;
+		    console.log({codes:req.query.codes});
+		    neo4j2d3.get(query,
+				 {codes:req.query.codes},
+				 handlers)
+			.then(function(graph){
+			    res.send(graph);
+			    console.log('sent');
+			})
+			.catch(console.log);
 		}
 	    );
 	}
        );
 
-	
+api.get('/dept',
+	function(req, res){
+	    driverReady.then(
+		function(){
+		    console.log('req @ 3001/dept', req.query);
+		    let handlers = {
+			pathHandler:function(){return undefined;},
+			segmentHandler:function(){return undefined;},
+			idGetter:courseIdGetter
+		    };
+		    let query = `MATCH (p:Course)-[r]->(c:Course)-->(d:Dept)
+		                 WHERE d.code in {codes} AND 2016 in c.years
+		                 RETURN distinct c, r, p
+		                 LIMIT 100`;
+		    console.log('1');
+		    neo4j2d3.get(query,
+				 {codes:req.query.codes},
+				 handlers)
+			.then(function(graph){
+			    res.send(graph);
+			    console.log('sent');
+			})
+			.catch(console.log);
+		}
+	    );
+	}
+       );
 
 api.get('/test',
 	function(req, res){
@@ -169,7 +254,7 @@ api.get('/test',
 			}
 		    );
 		}
-	    );	    
+	    );
 	}
        );
 api.listen(3001, function(){
@@ -178,6 +263,4 @@ api.listen(3001, function(){
 
 //const compilePage = pug.compileFile('temp.pug');
 //console.log(compilePage());
-
-
 
