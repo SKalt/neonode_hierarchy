@@ -59,20 +59,34 @@ function handleRecordField(
     graph,
     handlers
 ){
-    if (record.hasOwnProperty('labels')){
-	// it's a neo4j-driver.types.Node
-	handleNode(record, graph, handlers.idGetter);
-    } else if (record.hasOwnProperty('type')){
-	//it's a neo4j-driver.types.Relationship
-	handleLink(record, graph);
-    } else if (record.hasOwnProperty('segments')){
-	// it's a neo4j-driver.types.Path
-	handlers.pathHandler(record, graph);
-    } else if (record.hasOwnProperty('start')){
-	// it' a neo4j-driver.types.PathSegment
-	handlers.segmentHandler(record, graph);
-    } else {
-	throw "Not node, relationship, path, or segment.";
+    console.log('handling');
+    if (record){
+	if (record.hasOwnProperty('labels')){
+	    // it's a neo4j-driver.types.Node
+	    handleNode(record, graph, handlers.idGetter);
+	} else if (record.hasOwnProperty('type')){
+	    //it's a neo4j-driver.types.Relationship
+	    handleLink(record, graph);
+	} else if (record.hasOwnProperty('segments')){
+	    // it's a neo4j-driver.types.Path
+	    handlers.pathHandler(record, graph);
+	} else if (record.hasOwnProperty('start')){
+	    // it' a neo4j-driver.types.PathSegment
+	    handlers.segmentHandler(record, graph);
+	} else  if (record.hasOwnProperty('length')){
+	    // ??? array of ...links?
+	    // Whatever, recur
+	    console.log(record);
+	    record.forEach(
+		function(r){
+		    console.log(r);
+		    handleRecordField(r, graph, handlers);
+		}
+	    );
+	} else {
+	    console.log(record);
+	    throw "Not node, relationship, path, or segment.";
+	};
     };
 };
 
@@ -134,6 +148,7 @@ function handleNode(n, graph, idGetter){
  */
 function makeGraph(result, handlers){
     let graph = {nodes:[], links:[]};
+    console.log('entering makeGraph');
     result.records.forEach(
 	function(record){
 	    record.forEach(
@@ -157,15 +172,19 @@ function makeGraph(result, handlers){
  */
 function mapIds(graph){
     // graph has nodes array and links array
+    console.log('entering mapIDs');
     let idMap={};
     for (var i=0; i < graph.nodes.length; i++){
 	idMap[graph.nodes[i]._id] = graph.nodes[i].id;
 	delete graph.nodes[i]._id;
     }
-    for (i=0; i < graph.links.length; i++){
-	graph.links[i].source = idMap[graph.links[i].source];
-	graph.links[i].target = idMap[graph.links[i].target];
+    if (graph.links.length){
+	for (i=0; i < graph.links.length; i++){
+	    graph.links[i].source = idMap[graph.links[i].source];
+	    graph.links[i].target = idMap[graph.links[i].target];
+	}
     }
+    console.log('terminating mapIDs');
     return graph;
 }
 
