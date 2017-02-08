@@ -1,0 +1,95 @@
+#searchbar {
+    position:fixed;
+    right:1em;
+    top:1em;
+    max-width:100vw;
+    max-height:100vh;
+    min-width:10em;
+    width:30%;
+    background: rgba(255, 255, 255, 0.8);
+    overflow: auto;
+    padding:10px;
+    margin:10px;
+    z-index:1;
+    font-family:monospace;
+    font-size:12pt;
+}
+#searchbar h2 {
+    margin:0em;
+    font-family:monospace;
+    text-align:center;
+}
+#searchbar > div > :not(.sectionHeader){
+    display:none;
+}
+
+#keyword {
+    width:100%;
+}
+#searchbar input {
+    width:100%;
+}
+#years {
+    padding-top:10px;
+    padding-bottom:10px;
+    width:90%;
+    text-align:left;
+}
+#years span {
+    padding:3px;
+    margin:1px;
+    border: 1px solid rgba(100,100,100,.3);
+}
+
+td {
+    min-width:3em;
+    border: 1px solid rgba(100,100,100,.3);
+    margin:1px;
+    padding:3px;
+}
+.selected {
+     background-color: rgba(100, 100, 100, .7);
+}
+    
+#graphviz {
+    background-color: #f1f1f1;
+    height:100%;
+    width:100%;
+    left:0px;
+    top:0px;
+    position:absolute;
+    font-family:monospace;
+}
+
+
+
+/* mobile */
+@media screen and (max-width: 768px) {
+    #searchbar {
+	position:static;
+	width:100%;
+    }
+    #graphviz {
+	position:static;
+	width:100%;
+    }
+}
+
+.nodes circle {
+  stroke: #333;
+  stroke-width: 1px;
+  fill: white;
+}
+.nodes>text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}
+
+.edgePath path {
+  stroke: #333;
+  fill: #333;
+  stroke-width: 1.5px;
+}
+.links line {
+  stroke: #aaa;
+}
