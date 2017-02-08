@@ -1,18 +1,108 @@
 <html>
     <head>
-	<script src="./js/dagre-d3.min.js"></script>
-	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-	<style src=""
+	<link rel="stylesheet" type="text/css" href="./css/style.css">
     </head>
     <body>
-	<svg width="960" height="600"></svg>
 	<div id="searchbar">
-	    <!-- years highlighter-->
-	    <!-- depts dropdown/ hl -->
-	    <!-- concs dropdown -->
-	    <!-- profs search -->
-	    <!--  -->
-	    <!--  -->
+	    <h2>Search Courses</h2>
+	    <div>
+		<div class="sectionHeader">+ Keyword</div>
+		<div id="keyword">
+		    <input name="searchStr" type="text" placeholder="Title/description keywords">
+		</div>
+		<div class="sectionHeader">+ Years</div>
+		<div id="years">
+		    <table>
+			<tbody>
+			    <tr></tr>
+			</tbody>
+		    </table>
+		</div>
+		<div class="sectionHeader">+ Department</div>
+		<div id="deptSearch">
+		    <input
+			list="depts0"
+			id="depts"
+			placeholder="Filter by departments"
+		    >
+		    <div class="all">
+		    <table>
+			<!-- <tbody>
+			     <tr></tr>
+			     <tr></tr>
+			     <tr></tr>
+			     <tr></tr>
+			     <tr></tr>
+			     <tr></tr>
+			     <tr></tr>
+			     </tbody> -->
+			<tbody>
+			    <tr>
+				<td>ACS</td><td>DCS</td><td>FRE</td>
+				<td>LAS</td><td>PLTC</td><td>WGST</td>
+			    </tr>
+			    <tr>
+				<td>ANTH</td><td>ECON</td><td>FYS</td>
+				<td>MATH</td><td>PSYC</td>
+			    </tr>
+			    <tr>
+				<td>ASIA</td><td>EDUC</td><td>GEO</td>
+				<td>MUS</td><td>REL</td></tr>
+			    <tr>
+				<td>AVC</td><td>ENG</td><td>GRST</td>
+				<td>NRSC</td><td>RHET</td>
+			    </tr>
+			    <tr>
+				<td>BIO</td><td>ENVR</td><td>HIST</td>
+				<td>PE</td><td>SOC</td>
+			    </tr>
+			    <tr>
+				<td>CHEM</td><td>EUS</td><td>INDC</td>
+				<td>PHAS</td><td>SPAN</td>
+			    </tr>
+			</tbody>
+		    </table>
+		    </div>
+		</div>
+	    <datalist id="depts0">
+		<option value="AAS"></option><option value="ACS"></option>
+		<option value="ANTH"></option><option value="ASIA"></option>
+		<option value="AVC"></option><option value="BIO"></option>
+		<option value="CHEM"></option><option value="CMS"></option>
+		<option value="DCS"></option><option value="ECON"></option>
+		<option value="EDUC"></option><option value="ENG"></option>
+		<option value="ENVR"></option><option value="EUS"></option>
+		<option value="EXDS"></option><option value="FRE"></option>
+		<option value="FYS"></option><option value="GEO"></option>
+		<option value="GRST"></option><option value="HIST"></option>
+		<option value="INDC"></option><option value="INDS"></option>
+		<option value="LAS"></option><option value="MATH"></option>
+		<option value="MUS"></option><option value="NRSC"></option>
+		<option value="PE"></option><option value="PHAS"></option>
+		<option value="PHIL"></option><option value="PLTC"></option>
+		<option value="PSYC"></option><option value="REL"></option>
+		<option value="RHET"></option><option value="SOC"></option>
+		<option value="SPAN"></option><option value="THDN"></option>
+		<option value="WGST"></option>
+	    </datalist>
+	    <div class="sectionHeader">+ Professors</div>
+	    <div id="profs">
+		<input id="profs1" list="profs0" placeholder="Filter by professor">
+		<datalist id="profs0"></datalist>
+	    </div>
+	    <div class="sectionHeader">+ Programs/Concentrations</div>
+	    <div id="programs">
+		<input list="programs0" id="programs1" placeholder="Filter by concentration/program">
+		<datalist id="programs0"></datalist>
+	    </div>
+	    </div>
 	</div>
+	<svg id="graphviz"><g></g></svg>
+	<!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
+	<!-- <script src="./js/dagre-d3.min.js"></script> -->
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="./js/dagre.min.js"></script>
+	<script src="./js/d3.min.js"></script>
+	<script src="./js/main.js"></script>
     </body>
 </html>
